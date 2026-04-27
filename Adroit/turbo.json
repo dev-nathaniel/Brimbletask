@@ -1,0 +1,62 @@
+{
+    "$schema": "https://turbo.build/schema.json",
+    "concurrency": "20",
+    "globalEnv": [
+        "NATS_URL",
+        "REDIS_URL",
+        "DATABASE_URL",
+        "PROJECTS_DATABASE_URL",
+        "IDENTITY_DATABASE_URL",
+        "VAULT_ADDR",
+        "VAULT_TOKEN",
+        "NOMAD_ADDR",
+        "CONSUL_ADDR",
+        "HARBOR_URL",
+        "HARBOR_ADMIN_USER",
+        "HARBOR_ADMIN_PASSWORD",
+        "BUILDKIT_HOST",
+        "JWT_SECRET",
+        "JWT_REFRESH_SECRET",
+        "PLATFORM_URL",
+        "ADROIT_HOST_IP",
+        "DEPLOYMENT_RUNTIME",
+        "IDENTITY_SERVICE_URL",
+        "PROJECT_SERVICE_URL",
+        "GIT_INTEGRATION_URL",
+        "REGISTRY_SERVICE_URL",
+        "DEPLOYMENT_SERVICE_URL",
+        "RUNTIME_SERVICE_URL",
+        "LOGGING_SERVICE_URL",
+        "DATABASE_SERVICE_URL",
+        "MONITORING_SERVICE_URL",
+        "DNS_SERVICE_URL",
+        "NODE_ENV"
+    ],
+    "tasks": {
+        "build": {
+            "dependsOn": [
+                "^build"
+            ],
+            "outputs": [
+                "dist/**"
+            ]
+        },
+        "dev": {
+            "cache": false,
+            "persistent": true
+        },
+        "lint": {
+            "dependsOn": [
+                "^build"
+            ]
+        },
+        "test": {
+            "dependsOn": [
+                "build"
+            ]
+        },
+        "clean": {
+            "cache": false
+        }
+    }
+}

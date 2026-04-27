@@ -1,0 +1,224 @@
+version: "3.8"
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/main/schema/compose-spec.json
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: adroit-postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./Adroit/scripts/init-databases.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: adroit-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: nats:2-alpine
+    container_name: adroit-nats
+    ports:
+      - "4222:4222" # Client
+      - "8222:8222" # Monitoring
+    command: [ "-js", "-m", "8222" ] # Enable JetStream + monitoring
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  registry:
+    image: registry:2
+    container_name: adroit-registry
+    ports:
+      - "8080:5000"
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes:
+      - registry_data:/var/lib/registry
+
+  traefik:
+    image: traefik:v3.1
+    container_name: adroit-traefik
+    profiles: [ "proxy-traefik" ]
+    command:
+      - "--api.insecure=true"
+      - "--providers.consulcatalog=true"
+      - "--providers.consulcatalog.endpoint.address=http://host.docker.internal\
+        :8500"
+      - "--providers.consulcatalog.cache=false"
+      - "--entrypoints.web.address=:80"
+      - "--accesslog=true"
+    ports:
+      - "80:80"
+      - "8081:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  caddy:
+    build:
+      context: ./Adroit/infra/caddy
+    container_name: adroit-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Adroit/infra/caddy/Caddyfile.ctmpl:/etc/caddy/Caddyfile.ctmpl
+      - adroit-caddy-data:/data
+      - adroit-caddy-config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+    depends_on:
+      - consul
+
+  buildkit:
+    image: moby/buildkit:latest
+    container_name: adroit-buildkit
+    privileged: true
+    command:
+      [
+        "--addr",
+        "tcp://0.0.0.0:1234",
+        "--addr",
+        "unix:///run/buildkit/buildkitd.sock",
+      ]
+    ports:
+      - "1234:1234"
+    dns_opt:
+      - timeout:10
+    volumes:
+      - buildkit_data:/var/lib/buildkit
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: adroit-vault
+    command: "server -dev -dev-listen-address=0.0.0.0:8200"
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      VAULT_DEV_ROOT_TOKEN_ID: "root"
+      SKIP_SETCAP: "true"
+
+  consul:
+    image: hashicorp/consul:latest
+    container_name: adroit-consul
+    command: "agent -dev -client 0.0.0.0 -ui"
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: adroit-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./Adroit/infra/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: adroit-grafana
+    ports:
+      - "3020:3020"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./Adroit/docker/grafana/provisioning:/etc/grafana/provisioning
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: adroit-ngrok
+    profiles: [ "full" ]
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command: http host.docker.internal:3000 --url=${NGROK_DOMAIN}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  adroit-services:
+    build:
+      context: ./Adroit
+    container_name: adroit-services
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=development
+      - PROJECTS_DATABASE_URL=postgresql://postgres:postgres@adroit-postgres:5432/db_projects
+      - IDENTITY_DATABASE_URL=postgresql://postgres:postgres@adroit-postgres:5432/db_identity
+      - NATS_URL=nats://adroit-nats:4222
+      - REDIS_URL=redis://adroit-redis:6379
+      - VAULT_ADDR=http://adroit-vault:8200
+      - VAULT_TOKEN=root
+      - NOMAD_ADDR=http://${ADROIT_HOST_IP:-192.168.1.164}:4646
+      - HARBOR_URL=http://adroit-registry:8080
+      - BUILDKIT_HOST=docker-container://adroit-buildkit
+      - HARBOR_ADMIN_USER=admin
+      - HARBOR_ADMIN_PASSWORD=Harbor12345
+      - GITHUB_CLIENT_ID=Ov23lix6QILki7CqL1Gn
+      - GITHUB_CLIENT_SECRET=b689b01879617792f4597bf3db97fc0003f9f087
+      - GITHUB_WEBHOOK_SECRET=your_github_webhook_secret
+      - JWT_SECRET=dev-jwt-secret-change-in-production-minimum-32-chars
+      - JWT_REFRESH_SECRET=dev-refresh-secret-change-in-production-minimum-32-chars
+      - PLATFORM_URL=http://localhost:3000
+      - ADROIT_HOST_IP=${ADROIT_HOST_IP:-host.docker.internal}
+      - CONSUL_ADDR=http://adroit-consul:8500
+      - DEPLOYMENT_RUNTIME=${DEPLOYMENT_RUNTIME:-nomad}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000-3015:3000-3015"
+
+  adroit-dashboard:
+    build:
+      context: ./Adroit-dashboard
+    container_name: adroit-dashboard
+    depends_on:
+      - adroit-services
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3000/api/v1
+      - VITE_DEV_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXYtdXNlci0wMDEiLCJlbWFpbCI6ImRldkBhZHJvaXQubG9jYWwiLCJpYXQiOjE3NzcxNTE0MjcsImV4cCI6NDkzMjkxMTQyN30.roVfHRkVlyKGmce5D4aj8-WiG-kxjjoka57Dd09gu48
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
+  redis_data:
+  registry_data:
+  buildkit_data:
+  grafana_data:
+  adroit-caddy-data:
+  adroit-caddy-config:

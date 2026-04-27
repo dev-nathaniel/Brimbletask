@@ -1,0 +1,136 @@
+// Projects database schema
+// Database: db_projects on PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/projects"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PROJECTS_DATABASE_URL")
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String
+  teamId        String   @map("team_id")
+  description   String?
+  sourceType    String   @default("GITHUB") @map("source_type") // GITHUB, UPLOAD
+  sourceUrl     String?  @map("source_url")
+  repositoryUrl String?  @map("repository_url")
+  defaultBranch String   @default("main") @map("default_branch")
+  url           String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  environments Environment[]
+  deployments  Deployment[]
+  databases    ManagedDatabase[]
+  domains      Domain[]
+
+  @@unique([teamId, slug])
+  @@index([teamId])
+  @@map("projects")
+}
+
+model Domain {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
+  hostname  String   @unique
+  status    String   @default("pending") // pending, active, failed
+  sslStatus String   @default("none") @map("ssl_status")  // none, provisioning, active, failed
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("domains")
+}
+
+model Environment {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")
+  name       String
+  type       String   @default("development") // development, staging, production
+  branch     String?
+  autoDeploy Boolean  @default(false) @map("auto_deploy")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  project   Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  variables EnvironmentVariable[]
+
+  @@unique([projectId, name])
+  @@map("environments")
+}
+
+model EnvironmentVariable {
+  id             String   @id @default(cuid())
+  environmentId  String   @map("environment_id")
+  key            String
+  encryptedValue String   @map("encrypted_value")
+  isSecret       Boolean  @default(false) @map("is_secret")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, key])
+  @@map("environment_variables")
+}
+
+model Deployment {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
+  buildId   String   @map("build_id")
+  imageTag  String   @map("image_tag")
+  url       String?
+  status    String   @default("pending") // pending, deploying, success, failed
+  error     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("deployments")
+}
+
+model ManagedDatabase {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  name        String
+  type        String   @default("postgresql") // postgresql, redis, mysql
+  version     String   @default("16")
+  status      String   @default("provisioning") // provisioning, ready, failed
+  host        String?
+  port        Int      @default(5432)
+  user        String   @default("adroit_admin")
+  dbName      String   @map("db_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("managed_databases")
+}
+
+model DeploymentConfig {
+  id            String   @id @default(cuid())
+  projectId     String   @unique @map("project_id")
+  instanceSize  String   @default("small") @map("instance_size") // small, medium, large
+  instanceCount Int      @default(1) @map("instance_count")
+  region        String   @default("eu-central")
+  healthCheckPath String @default("/") @map("health_check_path")
+  buildCommand  String?  @map("build_command")
+  startCommand  String?  @map("start_command")
+  dockerfilePath String? @map("dockerfile_path")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("deployment_configs")
+}

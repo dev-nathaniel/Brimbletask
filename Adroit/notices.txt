@@ -1,0 +1,30 @@
+Lists are not paginated
+the way ids are generated
+auth flow doesn't look proper
+are env variables being hashed?
+Can I get deployments for a project?
+Can I rollback to a previous deployment?
+getting variables for deleted project returned 200 with empty data
+Secrets are still in vault after project deletion
+Can I pass in the build id instead to the rollback endpoint?
+This is being setup for local run, can you ensure it will run in production?
+Test DNS and Emailing/Notifications services later
+Live streaming of logs
+List builds for a project
+List builds for all projects
+List deployments for a project
+List deployments for all projects
+Are builds and deployments the same thing?
+dynamic cpu resources figures based on what the os returns ```text
+Allocated Resources
+CPU       Memory      Disk         
+0/48 MHz  0 B/24 GiB  0 B/460 GiB 
+```
+
+**Nomad thinks your Macbook has exactly 48 MHz of CPU inside the entire machine.**
+Decide pricing and allocation strategy
+
+Check all the type of apps railpack can build
+Handle docker file instances or other instances
+
+Monitor apps to allocate resources properly, especially ones using less than allocated initially

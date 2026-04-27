@@ -1,0 +1,31 @@
+{
+    auto_https disable_redirects
+    admin localhost:2019
+}
+
+# Static Core Services
+http://dashboard.localhost, http://localhost:5173 {
+    reverse_proxy http://adroit-dashboard:5173
+}
+
+# Adroit API
+http://api.localhost, http://localhost:3000 {
+    reverse_proxy http://adroit-services:3000
+}
+
+# Dynamic Project Services (Generated from Consul)
+{{- range services }}
+    {{- range $instance := service .Name }}
+        {{- range $instance.Tags }}
+            {{- if . | contains "Host(" }}
+                {{- $host := . | regexReplaceAll ".*Host\\([`]?([^`\\)]+)[`]?\\).*" "$1" }}
+                {{- if not (scratch.Key $host) }}
+                    {{- scratch.Set $host "done" }}
+http://{{ $host }} {
+    reverse_proxy {{ $instance.Address }}:{{ $instance.Port }}
+}
+                {{- end }}
+            {{- end }}
+        {{- end }}
+    {{- end }}
+{{- end }}

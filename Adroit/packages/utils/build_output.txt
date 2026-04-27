@@ -1,0 +1,13 @@
+
+> @adroit/utils@0.1.0 build
+> tsc
+
+src/errors.ts(1,31): error TS2307: Cannot find module '@adroit/types' or its corresponding type declarations.
+src/response.ts(1,60): error TS2307: Cannot find module '@adroit/types' or its corresponding type declarations.
+npm error Lifecycle script `build` failed with error:
+npm error code 2
+npm error path /Users/adebayo.olowofoyeku/Adroit/packages/utils
+npm error workspace @adroit/utils@0.1.0
+npm error location /Users/adebayo.olowofoyeku/Adroit/packages/utils
+npm error command failed
+npm error command sh -c tsc

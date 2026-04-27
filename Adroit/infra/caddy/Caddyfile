@@ -1,0 +1,24 @@
+{
+    auto_https off
+    admin off
+}
+
+# Adroit Dashboard
+http://dashboard.localhost {
+    reverse_proxy http://adroit-dashboard:5173
+}
+
+# Adroit API
+http://api.localhost {
+    reverse_proxy http://adroit-services:3000
+}
+
+# Project Dynamic Routing (Hybrid)
+# Caddy acts as the gatekeeper and hands off project traffic to Traefik.
+# Traefik then uses Consul to find the dynamic Nomad port.
+http://*.localhost {
+    reverse_proxy http://adroit-traefik:80 {
+        # Preserve the original Host header so Traefik knows which project to route to
+        header_up Host {host}
+    }
+}
