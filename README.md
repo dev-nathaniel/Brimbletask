@@ -108,6 +108,10 @@ Advanced auto-detection for Next.js to determine if a project should be `next st
 ## Future Roadmap (If I had more time...)
 
 - **Github Integration**: Github connection this currently works but is not fully integrated as this submission would require more setup, getting tokens and setting up callback urls.
+If you decide to test this feature, you would need;
+-- to get your own github tokens
+-- set up callback urls in github
+-- replace the PLATFORM_URL with an actual domain name, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_WEBHOOK_SECRET values in the environment variables for the adroit-services container.
 - **Prometheus & Grafana**: Full deep integration for per-service performance metrics and alerting.
 - **Log Stability**: Further hardening of the log-tailing buffer to prevent missed lines during high-throughput.
 - **In-Platform Cronjobs**: Native support for scheduled tasks using an internal cron engine rather than simple intervals.

@@ -186,8 +186,8 @@ services:
       - BUILDKIT_HOST=docker-container://adroit-buildkit
       - HARBOR_ADMIN_USER=admin
       - HARBOR_ADMIN_PASSWORD=Harbor12345
-      - GITHUB_CLIENT_ID=Ov23lix6QILki7CqL1Gn
-      - GITHUB_CLIENT_SECRET=b689b01879617792f4597bf3db97fc0003f9f087
+      - GITHUB_CLIENT_ID=test
+      - GITHUB_CLIENT_SECRET=test
       - GITHUB_WEBHOOK_SECRET=your_github_webhook_secret
       - JWT_SECRET=dev-jwt-secret-change-in-production-minimum-32-chars
       - JWT_REFRESH_SECRET=dev-refresh-secret-change-in-production-minimum-32-chars
