@@ -5,6 +5,7 @@ This document serves as the master manifest for all features and API endpoints w
 ---
 
 ## 1. Identity Service (Auth & Tenancy)
+
 **Base URL**: `/api/v1/auth`, `/api/v1/teams`, `/api/v1/users`, `/api/v1/api-keys`
 
 | Endpoint | Method | Description |
@@ -27,6 +28,7 @@ This document serves as the master manifest for all features and API endpoints w
 ---
 
 ## 2. Project Service (Orchestration Management)
+
 **Base URL**: `/api/v1/projects`, `/api/v1/environments`
 
 | Endpoint | Method | Description |
@@ -46,6 +48,7 @@ This document serves as the master manifest for all features and API endpoints w
 ---
 
 ## 3. Deployment & Build System
+
 **Base URL**: `/api/v1/deployments`, `/api/v1/logs`
 
 | Endpoint | Method | Description |
@@ -59,6 +62,7 @@ This document serves as the master manifest for all features and API endpoints w
 ---
 
 ## 4. Runtime & Observability
+
 **Base URL**: `/api/v1/runtime`
 
 | Endpoint | Method | Description |
@@ -69,40 +73,10 @@ This document serves as the master manifest for all features and API endpoints w
 | `/runtime/stats/:projectId` | GET | **[PHASE 4]** Real-time aggregate CPU/RAM usage |
 | `/runtime/logs/:projectId` | GET | Live real-time log stream proxy |
 
-## Health & Monitoring Service (Port 3012)
-- `GET /api/v1/monitoring/health/:projectId`: Aggregated health status from Consul + Nomad.
-
-## Scaling Service (Port 3013)
-- `POST /api/v1/scaling/policy`: Set auto-scaling policy for a project.
-- `POST /api/v1/scaling/:projectId/idle`: **[TESTING]** Manually force project to 0 instances (Scale-to-Zero test).
-
----
-
-## 5. DNS Management Service
-**Base URL**: `/api/v1/dns`
-
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/dns/domains` | POST | **[PHASE 7]** Attach custom domain to project (automates IONOS + SSL) |
-| `/dns/domains/:projectId` | GET | List all custom domains for a project |
-| `/dns/domains/:id` | DELETE | Detach a custom domain |
-
----
-
-*Last Updated: 2026-04-24*
-
-## 5. Managed Database Service
-**Base URL**: `/api/v1/databases`
-
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/databases` | POST | **[PHASE 5]** Provision a new managed PostgreSQL instance |
-| `/databases/:dbId` | GET | (Coming soon) Get database connection details |
-| `/databases/:dbId` | DELETE | (Coming soon) Terminate database instance |
-
 ---
 
 ## 6. Git & Integration Layer
+
 **Base URL**: `/github`, `/webhooks`
 
 | Endpoint | Method | Description |
@@ -115,8 +89,9 @@ This document serves as the master manifest for all features and API endpoints w
 ---
 
 ## 6. Global Infrastructure
-- **Traefik (Gateway)**: Dynamic routing via Consul Catalog.
-- **Nomad (Orchestrator)**: Native job lifecycle & rolling updates.
+
+- **Caddy (Gateway)**: Dynamic routing via Consul Catalog.
+- **Optional Nomad (Orchestrator)**: Native job lifecycle & rolling updates.
 - **Consul (Service Discovery)**: Real-time service health & catalog.
 - **Vault (Secrets)**: Secure per-project environment storage.
 - **NATS (Messaging)**: Pub/Sub for build events and log streaming.
