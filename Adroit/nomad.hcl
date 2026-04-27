@@ -1,12 +1,12 @@
 # Nomad Dev Configuration
 # Fixes Consul health check connectivity from Docker
 
-bind_addr = "192.168.1.164"
+bind_addr = "[IP_ADDRESS]"
 
 advertise {
-  http = "192.168.1.164"
-  rpc  = "192.168.1.164"
-  serf = "192.168.1.164"
+  http = "[IP_ADDRESS]"
+  rpc  = "[IP_ADDRESS]"
+  serf = "[IP_ADDRESS]"
 }
 
 client {
@@ -23,5 +23,5 @@ server {
 }
 
 consul {
-  address = "192.168.1.164:8500"
+  address = "[IP_ADDRESS]"
 }

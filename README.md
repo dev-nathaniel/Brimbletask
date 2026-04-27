@@ -75,6 +75,12 @@ Adroit is built as a highly decoupled microservice platform:
 
 Adroit automatically detects if **Nomad** is available. If it is, it uses Nomad's powerful rescheduling and job management. If not, it seamlessly falls back to a **Custom Docker Orchestrator** implemented in the `runtime-service`.
 
+If you decide to test this feature, you would need to start the nomad server and agent. You can do this by going to the nomad config file, **./Adroit/nomad.hcl**, adding your system's IP address to the `bind_addr`, `consul.address`, `http`, `rpc`, and `serf` fields, and running the following command:
+
+```bash
+nomad agent -dev -config ./Adroit/nomad.hcl
+```
+
 ### Self-Healing & Resilience (Docker Mode)
 
 - **Auto-Restart**: Adroit monitors containers in Docker mode. If a container stops or is accidentally deleted, the orchestrator detects the missing state and automatically re-creates/restarts it.
